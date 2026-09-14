@@ -1,7 +1,7 @@
 .claude/
 rules.tsv
 SHARED-RULES.md
-.hooks-mechanisms
+.tripwire-mechanisms
 .DS_Store
 __pycache__/
 AUDIT-*.md
