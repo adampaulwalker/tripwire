@@ -22,7 +22,7 @@ The other 1,833 are counted and not listed. A reviewer that printed all of them 
 | **B** | checkable, but no incident recorded | only if you ask, with the reason it's a candidate and not a job |
 | **C** | states an obligation and nothing more | counted, never listed |
 
-On that same library the review also turned up two rules that were being broken at the moment it ran. One said code lives in git and never in a synced document folder, and 51MB of git data was sitting in one. Both became guards that fail on any new violation while the existing ones stay listed until someone clears them.
+On that same library one of the rules it surfaced was being broken at the moment it ran: it said code lives in git and never in a synced document folder, and 51MB of git data was sitting in one. That rule and one other became guards. The first fails on any new violation, while the two that already existed stay listed until someone clears them.
 
 ## What's in it
 
