@@ -1,0 +1,40 @@
+# rules.tsv - the registry check-rules.sh reads.
+#
+# One rule per line:
+#     target|MARKER TEXT THAT MUST BE PRESENT|the dated incident and what it cost
+#
+# target  a skill name, whose SKILL.md is checked
+#         - or an exact path inside a skill, for a rule that has to live where
+#           the skill actually loads it. Checking only SKILL.md would pass on a
+#           file nobody edited.
+# MARKER  a literal substring. Use the rule's heading, so deleting the section
+#         deletes the marker. Leading dashes are fine; it is never parsed as an
+#         option.
+# why     the incident. A check whose reason is forgotten is a check that gets
+#         removed, so this is not optional - it is printed when the check fires,
+#         and a row without it is refused.
+#
+# All three fields must be non-empty. An empty marker would match every line,
+# which is a confident-looking way to have inspected nothing.
+#
+# Copy this to rules.tsv and replace every line. These are examples, not yours.
+
+qa|COMPARE OUTPUT TO OUTPUT|2026-09-01: nine checks reported green in one night while the artifact was wrong; every one compared code to a belief
+qa|A CHECK NOBODY BELIEVES IS NOT A CHECK|false alarms, dark guards and a tolerated 34-failure ceiling are where three weeks went
+build|NOTHING IS DONE UNTIL IT HAS BEEN SHOWN TO FAIL|a guard that passes on the pre-fix tree is decoration; this caught two vacuous guards and a fix that never existed
+build|NAME THE COPY THAT RUNS|one adapter existed four times; an md5 taken on a container that cannot execute the file was reported as proof
+release/CHECKLIST.md|Never send without explicit approval of the message text|2026-09-08: an adjacent "go" answering a different question was read as authorization and an unreviewed email reached a client
+
+# ---------------------------------------------------------------------------
+# Declared exemptions.
+#
+# check-rules.sh runs three phases: the registry above, every guard_test.sh /
+# guard_test.py it discovers, and shared-rule drift. A phase with nothing to do
+# FAILS - absence is never a silent pass. These two lines are the only way to
+# turn a missing phase into a recorded skip, and each needs a written reason
+# that appears in the output every run.
+#
+# Delete them the moment they stop being true. A skip is a gap, not a pass.
+
+# proofs: none - no skill here owns an executable guard yet
+# shared-rules: none - no rule is carried by more than one skill yet

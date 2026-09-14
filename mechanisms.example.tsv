@@ -1,0 +1,14 @@
+# mechanisms.example.tsv - override the four defaults in conformance.sh.
+#
+# One mechanism per line:
+#     id|what it must be|why it exists|how to clear it
+#
+# The id is the marker: conformance.sh looks for `tripwire:<id>` in a file that
+# can execute. A hit only in a .md / .txt / .rst is a plan, not a mechanism, and
+# fails with that named as the reason.
+#
+# Put this at the project root as `.tripwire-mechanisms`, or pass --mechanisms FILE.
+# With no file anywhere, the four built-in defaults apply.
+
+coverage-map|a test that enumerates the system's SURFACES from the shipped code and forces each into covered-by-a-named-test or not-covered-with-a-reason|weeks of review rounds each declared complete and found more, because complete meant 'the checks I wrote pass'|write it, mark it 'tripwire:coverage-map', and make an undeclared surface FAIL
+no-secrets-in-fixtures|a test that scans every fixture for live credentials and refuses|a fixture carrying a real API token reached a public repository and the key had to be rotated under time pressure|write it, mark it 'tripwire:no-secrets-in-fixtures'

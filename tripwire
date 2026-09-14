@@ -1,0 +1,66 @@
+#!/bin/bash
+# tripwire - one entry point for the whole skill.
+#
+# There are four tools underneath and you should not have to remember their
+# names. The order they belong in is the workflow:
+#
+#   tripwire scan      which rules are still only prose?      (start here)
+#   tripwire check     is the guidance still in the skills?
+#   tripwire conform   does a PROJECT carry the mechanisms?
+#   tripwire sync      one canonical text, N copies, no drift
+#   tripwire selftest  prove every gate here can fail
+#
+# Run with no arguments to scan and be told what to do next.
+#
+# Exit codes are the subcommand's, unchanged - this dispatches, it does not
+# interpret. A wrapper that translated a gate's status would be a place for a
+# refusal to quietly become a pass.
+set -uo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$(basename "${BASH_SOURCE[0]}")"
+
+usage() {
+  sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+  printf '\nEvery subcommand takes --skills DIR. scan and check also take\n'
+  printf -- '--rules FILE. Pass --help to any of them for the rest.\n'
+}
+
+need() {
+  [ -e "$HERE/$1" ] || {
+    printf '%s: %s is missing from %s\n' "$SELF" "$1" "$HERE" >&2
+    exit 2
+  }
+}
+
+cmd="${1:-}"
+[ $# -gt 0 ] && shift
+
+case "$cmd" in
+  scan)     need scan.py;        exec python3 "$HERE/scan.py" "$@" ;;
+  check)    need check-rules.sh; exec bash    "$HERE/check-rules.sh" "$@" ;;
+  conform)  need conformance.sh; exec bash    "$HERE/conformance.sh" "$@" ;;
+  sync)     need sync-rules.py;  exec python3 "$HERE/sync-rules.py" "$@" ;;
+  selftest) need selftest.sh;    exec bash    "$HERE/selftest.sh" "$@" ;;
+  -h|--help|help) usage; exit 0 ;;
+  "")
+    # No arguments: do the first useful thing rather than printing a menu.
+    need scan.py
+    python3 "$HERE/scan.py" "$@"
+    rc=$?
+    printf '\n'
+    if [ "$rc" = "2" ]; then
+      printf 'The scan could not run. Fix what it named above, then:  %s scan\n' "$SELF" >&2
+    else
+      printf 'Next: pick one finding, write the guard, and break the code to watch\n'
+      printf 'it fire. Then record it so it cannot be quietly deleted:\n\n'
+      printf '  echo "<skill>|<a literal string from the rule>|<the incident>" >> rules.tsv\n'
+      printf '  %s check\n\n' "$SELF"
+      printf 'A guard you have not watched fail is decoration.  %s selftest\n' "$SELF"
+    fi
+    exit "$rc" ;;
+  *)
+    printf '%s: unknown command: %s\n\n' "$SELF" "$cmd" >&2
+    usage >&2
+    exit 2 ;;
+esac

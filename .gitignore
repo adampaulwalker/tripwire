@@ -1,0 +1,6 @@
+.claude/
+rules.tsv
+SHARED-RULES.md
+.hooks-mechanisms
+.DS_Store
+__pycache__/
