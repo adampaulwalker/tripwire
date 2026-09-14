@@ -4,3 +4,4 @@ SHARED-RULES.md
 .hooks-mechanisms
 .DS_Store
 __pycache__/
+AUDIT-*.md

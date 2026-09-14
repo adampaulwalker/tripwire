@@ -14,11 +14,11 @@ before anyone relies on it.
 
 Start here, the first time:
 
-    tripwire scan --skills ~/.claude/skills
+    ~/.claude/skills/tripwire/tripwire scan --skills ~/.claude/skills
 
 
-A hook here is a check that fires on the mistake you have ALREADY made, in the
-place you will make it again. Hook it into the commit gate, the test suite, the
+A tripwire is a check that fires on the mistake you have ALREADY made, in the
+place you will make it again. Wire it into the commit gate, the test suite, the
 finish script - wherever the work cannot get past it.
 
 Not a linter. Not a style rule. A specific, named, provable guard against a
@@ -58,8 +58,8 @@ Real examples, all from one repository on one day:
 ## When you do NOT need one
 
 - The mistake has been made once and the cause is now structurally impossible.
-- The check cannot fail (see "decoration", below).
-- You are guessing at a future problem. Hooks are built from incident reports,
+- The check cannot fail (see rule 4, below).
+- You are guessing at a future problem. Tripwires are built from incident reports,
   not from imagination. A guard with no incident behind it gets deleted by the
   next person who finds it annoying, and they will be right.
 
@@ -104,11 +104,11 @@ nothing, and passes exactly as green as a real one.** The only way to know is
 to revert the fix and check the test fails. Do this every time. It has caught
 vacuous tests written minutes earlier by someone who knew the rule.
 
-`selftest.sh` in this repo is that demonstration for every gate shipped here. Two hundred and fifty-one assertions, each declaring an exact exit
+`selftest.sh` in this repo is that demonstration for every gate shipped here. Two hundred and seventy-five assertions, each declaring an exact exit
 status in advance, so a crash cannot read as a successful refusal. Run it
 before trusting any of them:
 
-    bash selftest.sh
+    tripwire selftest
 
 ### 5. It reports PASS / FAIL / SKIP-with-reason, never silence
 
@@ -226,8 +226,8 @@ the skills tree and runs it.
 
 1. **Write the incident down first.** Date, what shipped, what it cost. If you
    cannot, you do not have a guard, you have a preference.
-2. **Find the narrowest mechanical signal** that would have caught it. Prefer
-   grepping the code over inspecting behaviour; prefer arithmetic over
+2. **Find the narrowest mechanical signal** that would have caught it. Assert
+   on what the code produces, or parse the source - never grep it (rule 9); prefer arithmetic over
    judgment.
 3. **Write it to fail closed.**
 4. **Break the code and watch it fire.** Record that you did.
@@ -260,9 +260,7 @@ filter, whatever its hit rate looks like.
 | **B** | states an obligation, mechanically checkable, no incident recorded | 364 |
 | **C** | states an obligation and nothing more | 1,458 |
 
-Another 9 were already named in the registry and dropped off the list, which is
-the scan and the registry staying in step: guard something, and the number goes
-down.
+Another 9 were already named in the registry and dropped off the list.
 
 Tier A is the bullseye: somebody cared enough to write down what the mistake
 cost, and still left the rule as prose. That is this skill's thesis, found for
@@ -270,11 +268,35 @@ you.
 
 Tier B is a candidate, not a job. The rule above still holds - a guard with no
 incident behind it gets deleted by the next person who finds it annoying, and
-they are right - so tier B prints with that reason attached rather than a
+they are right - so tier B is listed only when you ask for it (`--tier B`), with that reason attached rather than a
 suggestion to go build something.
 
 Tier C is counted and never listed. The count is printed so you can see the size
 of what was filtered instead of wondering whether the scan was any good.
+
+### After the review: guard what deserves it
+
+The review is the first half. The second half is the reason to run it. Work
+only on tier A; tier B waits for an incident and tier C is not work.
+
+1. **Take each tier-A finding in turn.** For every one that has a mechanical
+   signal - a file that must not exist, a string a skill must carry, a value
+   that must match - build the guard: a `guard_test.sh` or `guard_test.py` in
+   that skill's directory, following "How to build one" above.
+2. **Break it and watch it fire, then restore it and watch it pass.** A guard
+   that has not been seen to fail is not finished (rule 4).
+3. **Register it** in `rules.tsv`, so deleting the rule's text turns the check
+   red.
+4. **Give every tier-A finding you do not guard a written verdict** in
+   `AUDIT-<date>.md`, next to `rules.tsv`: the finding's file and line, and what
+   a guard would need that is not available today. A finding with no verdict
+   quietly becomes untrue.
+
+Done means every tier-A finding is either guarded or has a verdict in that
+file. If you registered at least one guard, done also means
+`~/.claude/skills/tripwire/tripwire check --skills ~/.claude/skills` is clean.
+If none was warranted, there is no registry to check, and the audit file is the
+whole result.
 
 ### What it reads, and how well
 
@@ -311,7 +333,10 @@ skills state rules with nothing executing at all.
 
 ## One entry point
 
-Four tools, one command, in the order the work happens:
+Five subcommands, one command, in the order the work happens. `tripwire` is the
+executable file in this skill's own directory - `~/.claude/skills/tripwire/tripwire`
+after a normal install. `install.sh` does not put it on your PATH, so run it by
+that path, or from inside the skill's directory as `./tripwire`:
 
     tripwire              scan, then say what to do next
     tripwire scan         which rules are still only prose?
@@ -332,9 +357,9 @@ according to the other. That is the vendored-copy defect this skill exists to
 name, found inside the skill itself. A selftest case asserts there is exactly
 one parser.
 
-## The four gates in this repo
+## The gates, one by one
 
-### `conformance.sh` - does the PROJECT carry the mechanisms?
+### `tripwire conform` - does the PROJECT carry the mechanisms?
 
 Asserting that a rule's text is still in a skill guards the guidance from
 deletion and nothing more. It cannot tell you whether a project built with that
@@ -345,7 +370,7 @@ contract at all and the fourth had two steps marked `required: false`. Every
 rule in every one of them was advice. An agent could run the whole workflow,
 skip all of it, and report done.
 
-    bash conformance.sh [project-dir]
+    tripwire conform [project-dir]
 
 Each mechanism is claimed by a MARKER at the code - `tripwire:<id>` in the file
 that implements it - because a central "yes we did that" registry goes stale in
@@ -366,12 +391,12 @@ one per line: `id|what it must be|why it exists|how to clear it`.
 map must not be able to report that it has one by saying nothing. Nor by
 writing the marker in a README - see rule 10.
 
-### `check-rules.sh` - is the guidance still in the skills?
+### `tripwire check` - is the guidance still in the skills?
 
 A rule added to a skill can be quietly deleted, and then it is prose again.
 This asserts each rule is STILL THERE, in every skill that needs it.
 
-    bash check-rules.sh
+    tripwire check --skills ~/.claude/skills
 
 It reads `rules.tsv`, one line per rule:
 
@@ -397,7 +422,7 @@ Those become counted skips, printed with their reason every run. Rule 7 in
 practice: a skip is legitimate only when it carries a written reason and sits
 on a list that may shrink, never grow.
 
-### `sync-rules.py` - one canonical text, N copies, no drift
+### `tripwire sync` - one canonical text, N copies, no drift
 
 A rule needed by several skills has to be COPIED into each of them, because
 skills load independently and a cross-reference is not in context at the moment
@@ -448,7 +473,7 @@ than a shortcut:
   that branch is never reached from the normal path and no case exercises it.
   It stays as defence in depth, declared rather than claimed.
 - **The registry reader's own failure handler.** An error raised while reading
-  a registry file that opened successfully is routed to a clean exit 2, and
+  a registry file that opened successfully is routed to exit 2, and
   that was verified by fault injection during review, but no permanent case in
   the suite holds it there. It is the one handler in this repo protected by a
   reviewer rather than by a test.

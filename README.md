@@ -2,11 +2,13 @@
 
 A Claude Code skill that reviews your skill stack and finds the rules nothing enforces.
 
-Every skill library accumulates rules. Most live in a SKILL.md as a sentence: *never do this*, *always check that*. Some of them get broken anyway, and writing them more emphatically doesn't help. Tripwire reads every skill you have, finds each rule that states an obligation, works out which ones nothing enforces, and ranks them by whether the rule has already been broken. Then it turns the ones worth guarding into checks that fail, registers them so they can't be quietly deleted, and proves each one fires before anyone relies on it.
+Every skill library accumulates rules. Most live in a SKILL.md as a sentence: *never do this*, *always check that*. Some of them get broken anyway, and writing them more emphatically doesn't help. Tripwire reads every skill you have, finds each rule that states an obligation, works out which ones nothing enforces, and ranks them by whether the rule has already been broken. Then it helps you turn the ones worth guarding into checks that fail, registers them so they can't be quietly deleted, and proves each one fires before anyone relies on it.
 
 **It reviews your whole stack the first time you run it.**
 
 ```bash
+git clone https://github.com/adampaulwalker/tripwire.git
+cd tripwire && bash install.sh
 ./tripwire scan --skills ~/.claude/skills
 ```
 
@@ -14,15 +16,15 @@ Every skill library accumulates rules. Most live in a SKILL.md as a sentence: *n
 
 Run against one real library of 101 skills, it read 1,864 lines that state an obligation and listed 31. Those 31 each cite a dated incident and still have nothing executing behind them - somebody cared enough to write down what the mistake cost, then left the rule as prose.
 
-The other 1,833 are counted and not listed. A reviewer that printed all of them would be switched off within a day, so the ranking is the feature:
+The other 1,831 lines are counted and not listed. A reviewer that printed all of them would be switched off within a day, so the ranking is the feature:
 
 | Tier | What it is | Listed? |
 |---|---|---|
 | **A** | states an obligation, cites an incident, nothing enforces it | yes, each with a next action |
-| **B** | checkable, but no incident recorded | only if you ask, with the reason it's a candidate and not a job |
+| **B** | checkable, but no incident recorded | only with `--tier B`, and with the reason it's a candidate and not a job |
 | **C** | states an obligation and nothing more | counted, never listed |
 
-On that same library one of the rules it surfaced was being broken at the moment it ran: it said code lives in git and never in a synced document folder, and 51MB of git data was sitting in one. That rule and one other became guards. The first fails on any new violation, while the two that already existed stay listed until someone clears them.
+On that same library one of the rules it surfaced was being broken at the moment it ran: it said code lives in git and never in a synced document folder, and 51MB of git data was sitting in one. That rule and one other became guards. The first fails on any new violation, while the two repositories already sitting in that folder stay listed until someone moves them.
 
 ## What's in it
 
@@ -40,15 +42,9 @@ Exit codes pass through untouched: 0 clean, 1 a check fired, 2 it could not run.
 
 ## Install
 
-```bash
-git clone https://github.com/adampaulwalker/tripwire.git
-cd tripwire
-bash install.sh
-```
+The three commands at the top install it and run the first review. `install.sh` runs the selftest first, so a broken checkout can't become an installed skill, then links the folder into `~/.claude/skills/tripwire`. Claude Code picks it up as `/tripwire`. The `tripwire` command isn't added to your PATH, so from a shell run it from the clone as `./tripwire`, or as `~/.claude/skills/tripwire/tripwire`.
 
-That runs the selftest first, so a broken checkout can't become an installed skill, then links the folder into `~/.claude/skills/tripwire`. Claude Code picks it up as `/tripwire`.
-
-Then run the review. Copy `rules.example.tsv` to `rules.tsv` and register the rules you decide to guard. Until you do, `tripwire check` refuses with `no rules registry`, which is deliberate - an empty registry is a gate that inspected nothing, not a clean run.
+After the review, copy `rules.example.tsv` to `rules.tsv` and register the rules you decide to guard. Until you do, `./tripwire check` refuses with `no rules registry`, which is deliberate - an empty registry is a gate that inspected nothing, not a clean run.
 
 ## Every gate here has been shown to fail
 
